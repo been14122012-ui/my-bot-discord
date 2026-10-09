@@ -45,7 +45,7 @@ function saveData() {
 function userData(guildId, userId) {
   const key = `${guildId}:${userId}`;
   if (!data.users[key]) {
-    data.users[key] = { xp: 0, level: 0, coins: 0, dailyAt: 0, workAt: 0, lastXpAt: 0, inventory: [] };
+    data.users[key] = { xp: 0, level: 0, coins: 0, dailyAt: 0, dailyStreak: 0, lastDailyDate: "", workAt: 0, lastXpAt: 0, inventory: [] };
   }
   return data.users[key];
 }
@@ -58,7 +58,7 @@ function errorReply(i, content) {
 
 // Tìm emoji coin theo tên trong chính server Discord.
 async function getCoinEmoji(guild) {
-  const emojiName = process.env.COIN_EMOJI_NAME || "tiengia";
+  const emojiName = process.env.COIN_EMOJI_NAME || "coin";
   try {
     await guild.emojis.fetch();
     const emoji = guild.emojis.cache.find(e => e.name === emojiName);
@@ -280,25 +280,57 @@ client.on(Events.InteractionCreate, async i => {
 
     if (cmd === "daily") {
       const d = userData(guild.id, i.user.id);
-      const remaining = 86400000 - (Date.now() - (d.dailyAt || 0));
-      if (remaining > 0) return errorReply(i, `Bạn đã nhận daily. Thử lại sau khoảng ${Math.ceil(remaining / 3600000)} giờ.`);
+      const today = new Intl.DateTimeFormat("en-CA", {
+        timeZone: "Asia/Ho_Chi_Minh", year: "numeric", month: "2-digit", day: "2-digit"
+      }).format(new Date());
+      if (d.lastDailyDate === today) {
+        return errorReply(i, "Bạn đã điểm danh hôm nay rồi. Hãy quay lại ngày mai nhé!");
+      }
+
+      const yesterdayDate = new Date(Date.now() - 86400000);
+      const yesterday = new Intl.DateTimeFormat("en-CA", {
+        timeZone: "Asia/Ho_Chi_Minh", year: "numeric", month: "2-digit", day: "2-digit"
+      }).format(yesterdayDate);
+      // Nếu điểm danh ngày liền trước thì nối chuỗi, nếu không thì bắt đầu lại từ 1.
+      d.dailyStreak = d.lastDailyDate === yesterday ? (d.dailyStreak || 0) + 1 : 1;
+      d.lastDailyDate = today;
       d.dailyAt = Date.now();
-      d.coins += 250;
+
+      const baseReward = 250;
+      const bonus = d.dailyStreak % 5 === 0
+        ? Math.min(800, ((d.dailyStreak / 5) * 50) + 50)
+        : 0;
+      const earned = baseReward + bonus;
+      d.coins += earned;
       saveData();
       const coinEmoji = await getCoinEmoji(guild);
-      return i.reply(`🎁 Bạn nhận **250 ${coinEmoji}**! Số dư: **${d.coins.toLocaleString("vi-VN")} ${coinEmoji}**.`);
+      const bonusText = bonus > 0 ? `
+🔥 Chuỗi ${d.dailyStreak} ngày: thưởng thêm **${bonus.toLocaleString("vi-VN")} ${coinEmoji}**!` : "";
+      return i.reply(`🎁 Điểm danh thành công! Chuỗi: **${d.dailyStreak} ngày**.
+Bạn nhận **${baseReward} ${coinEmoji}**${bonusText}
+Số dư: **${d.coins.toLocaleString("vi-VN")} ${coinEmoji}**.`);
     }
 
     if (cmd === "work") {
       const d = userData(guild.id, i.user.id);
       const remaining = 60000 - (Date.now() - (d.workAt || 0));
       if (remaining > 0) return errorReply(i, `Hãy chờ ${Math.ceil(remaining / 1000)} giây rồi làm tiếp.`);
-      const earned = 50 + Math.floor(Math.random() * 101);
+
+      const jobs = {
+        dishwashing: { name: "Rửa bát", reward: 150 },
+        livestream: { name: "Livestream", reward: 250 },
+        programming: { name: "Lập trình", reward: 300 }
+      };
+      const jobKey = i.options.getString("job", true);
+      const job = jobs[jobKey];
+      if (!job) return errorReply(i, "Công việc không hợp lệ.");
+
       d.workAt = Date.now();
-      d.coins += earned;
+      d.coins += job.reward;
       saveData();
       const coinEmoji = await getCoinEmoji(guild);
-      return i.reply(`💼 Bạn kiếm được **${earned} ${coinEmoji}**. Số dư: **${d.coins.toLocaleString("vi-VN")} ${coinEmoji}**.`);
+      return i.reply(`💼 Bạn đã làm công việc **${job.name}** và nhận **${job.reward} ${coinEmoji}**.
+Số dư: **${d.coins.toLocaleString("vi-VN")} ${coinEmoji}**.`);
     }
 
     if (cmd === "pay") {
