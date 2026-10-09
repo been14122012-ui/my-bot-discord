@@ -56,6 +56,19 @@ function errorReply(i, content) {
   return i.reply({ content, ephemeral: true, allowedMentions: { parse: [] } });
 }
 
+// Tìm emoji coin theo tên trong chính server Discord.
+async function getCoinEmoji(guild) {
+  const emojiName = process.env.COIN_EMOJI_NAME || "coin";
+  try {
+    await guild.emojis.fetch();
+    const emoji = guild.emojis.cache.find(e => e.name === emojiName);
+    return emoji ? emoji.toString() : "🪙";
+  } catch (error) {
+    console.error("Không lấy được emoji coin:", error.message);
+    return "🪙";
+  }
+}
+
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
@@ -245,6 +258,7 @@ client.on(Events.InteractionCreate, async i => {
 
     if (cmd === "leaderboard") {
       const type = i.options.getString("type") || "xp";
+      const coinEmoji = type === "coins" ? await getCoinEmoji(guild) : "";
       const list = Object.entries(data.users)
         .filter(([key]) => key.startsWith(`${guild.id}:`))
         .map(([key, value]) => ({ id: key.split(":")[1], ...value }))
@@ -252,14 +266,16 @@ client.on(Events.InteractionCreate, async i => {
       if (!list.length) return i.reply("Chưa có dữ liệu xếp hạng.");
       const lines = await Promise.all(list.map(async (u, n) => {
         const user = await client.users.fetch(u.id).catch(() => null);
-        return `**${n + 1}.** ${user?.username || "Thành viên"} — ${u[type] || 0} ${type === "xp" ? "XP" : "coin"}`;
+        return `**${n + 1}.** ${user?.username || "Thành viên"} — ${u[type] || 0} ${type === "xp" ? "XP" : coinEmoji}`;
       }));
       return i.reply({ embeds: [new EmbedBuilder().setColor(0xF1C40F).setTitle(`BeenStore — Top ${type === "xp" ? "XP" : "Coin"}`).setDescription(lines.join("\n"))] });
     }
 
     if (cmd === "balance") {
       const u = i.options.getUser("user") || i.user;
-      return i.reply(`🪙 ${u.username} đang có **${userData(guild.id, u.id).coins} coin**.`);
+      const coinEmoji = await getCoinEmoji(guild);
+      const coins = userData(guild.id, u.id).coins;
+      return i.reply(`${coinEmoji} ${u.username} đang có **${coins.toLocaleString("vi-VN")}**.`);
     }
 
     if (cmd === "daily") {
@@ -269,7 +285,8 @@ client.on(Events.InteractionCreate, async i => {
       d.dailyAt = Date.now();
       d.coins += 250;
       saveData();
-      return i.reply(`🎁 Bạn nhận **250 coin**! Số dư: **${d.coins} coin**.`);
+      const coinEmoji = await getCoinEmoji(guild);
+      return i.reply(`🎁 Bạn nhận **250 ${coinEmoji}**! Số dư: **${d.coins.toLocaleString("vi-VN")} ${coinEmoji}**.`);
     }
 
     if (cmd === "work") {
@@ -280,7 +297,8 @@ client.on(Events.InteractionCreate, async i => {
       d.workAt = Date.now();
       d.coins += earned;
       saveData();
-      return i.reply(`💼 Bạn kiếm được **${earned} coin**. Số dư: **${d.coins} coin**.`);
+      const coinEmoji = await getCoinEmoji(guild);
+      return i.reply(`💼 Bạn kiếm được **${earned} ${coinEmoji}**. Số dư: **${d.coins.toLocaleString("vi-VN")} ${coinEmoji}**.`);
     }
 
     if (cmd === "pay") {
@@ -292,7 +310,8 @@ client.on(Events.InteractionCreate, async i => {
       sender.coins -= amount;
       userData(guild.id, target.id).coins += amount;
       saveData();
-      return i.reply(`💸 Đã chuyển **${amount} coin** cho ${target.username}.`);
+      const coinEmoji = await getCoinEmoji(guild);
+      return i.reply(`💸 Đã chuyển **${amount.toLocaleString("vi-VN")} ${coinEmoji}** cho ${target.username}.`);
     }
 
     if (cmd === "shop") {
@@ -315,7 +334,8 @@ client.on(Events.InteractionCreate, async i => {
       d.coins -= product.price;
       d.inventory.push(item);
       saveData();
-      return i.reply(`✅ Bạn đã mua **${product.name}** với ${product.price} coin. Số dư còn ${d.coins} coin.`);
+      const coinEmoji = await getCoinEmoji(guild);
+      return i.reply(`✅ Bạn đã mua **${product.name}** với ${product.price} ${coinEmoji}. Số dư còn ${d.coins.toLocaleString("vi-VN")} ${coinEmoji}.`);
     }
 
     if (cmd === "ask") {
