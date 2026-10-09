@@ -37,8 +37,8 @@ const commands = [
   new SlashCommandBuilder().setName("daily").setDescription("Điểm danh nhận coin và thưởng chuỗi ngày"),
   new SlashCommandBuilder().setName("work").setDescription("Chọn công việc để kiếm coin")
     .addStringOption(o => o.setName("job").setDescription("Công việc muốn làm").setRequired(true).addChoices(
-      { name: "Rửa bát — 150 coin", value: "dishwashing" },
-      { name: "Livestream — 250 coin", value: "livestream" },
+      { name: "Rửa bát — 300 coin", value: "dishwashing" },
+      { name: "Livestream — 300 coin", value: "livestream" },
       { name: "Lập trình — 300 coin", value: "programming" }
     )),
   new SlashCommandBuilder().setName("pay").setDescription("Chuyển coin cho thành viên")
