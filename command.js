@@ -34,8 +34,13 @@ const commands = [
     )),
   new SlashCommandBuilder().setName("balance").setDescription("Xem số dư coin")
     .addUserOption(o => o.setName("user").setDescription("Thành viên")),
-  new SlashCommandBuilder().setName("daily").setDescription("Nhận 250 coin mỗi 24 giờ"),
-  new SlashCommandBuilder().setName("work").setDescription("Làm việc kiếm coin"),
+  new SlashCommandBuilder().setName("daily").setDescription("Điểm danh nhận coin và thưởng chuỗi ngày"),
+  new SlashCommandBuilder().setName("work").setDescription("Chọn công việc để kiếm coin")
+    .addStringOption(o => o.setName("job").setDescription("Công việc muốn làm").setRequired(true).addChoices(
+      { name: "Rửa bát — 150 coin", value: "dishwashing" },
+      { name: "Livestream — 250 coin", value: "livestream" },
+      { name: "Lập trình — 300 coin", value: "programming" }
+    )),
   new SlashCommandBuilder().setName("pay").setDescription("Chuyển coin cho thành viên")
     .addUserOption(o => o.setName("user").setDescription("Người nhận").setRequired(true))
     .addIntegerOption(o => o.setName("amount").setDescription("Số coin").setRequired(true).setMinValue(1)),
