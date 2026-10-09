@@ -313,8 +313,12 @@ Số dư: **${d.coins.toLocaleString("vi-VN")} ${coinEmoji}**.`);
 
     if (cmd === "work") {
       const d = userData(guild.id, i.user.id);
-      const remaining = 60000 - (Date.now() - (d.workAt || 0));
-      if (remaining > 0) return errorReply(i, `Hãy chờ ${Math.ceil(remaining / 1000)} giây rồi làm tiếp.`);
+      const WORK_COOLDOWN = 60 * 60 * 1000; // 1 giờ
+      const remaining = WORK_COOLDOWN - (Date.now() - (d.workAt || 0));
+      if (remaining > 0) {
+        const minutes = Math.ceil(remaining / 60000);
+        return errorReply(i, `Bạn đã làm việc rồi! Hãy quay lại sau **${minutes} phút** nhé.`);
+      }
 
       const jobs = {
         dishwashing: { name: "Rửa bát", reward: 150 },
