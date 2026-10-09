@@ -275,7 +275,7 @@ client.on(Events.InteractionCreate, async i => {
       const u = i.options.getUser("user") || i.user;
       const coinEmoji = await getCoinEmoji(guild);
       const coins = userData(guild.id, u.id).coins;
-      return i.reply(`${coinEmoji} ${u.username} đang có **${coins.toLocaleString("vi-VN")}**.`);
+      return i.reply(`${u.username} đang có **${coins.toLocaleString("vi-VN")} ${coinEmoji}**.`);
     }
 
     if (cmd === "daily") {
