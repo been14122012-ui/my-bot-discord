@@ -58,7 +58,7 @@ function errorReply(i, content) {
 
 // Tìm emoji coin theo tên trong chính server Discord.
 async function getCoinEmoji(guild) {
-  const emojiName = process.env.COIN_EMOJI_NAME || "coin";
+  const emojiName = process.env.COIN_EMOJI_NAME || "tiengia";
   try {
     await guild.emojis.fetch();
     const emoji = guild.emojis.cache.find(e => e.name === emojiName);
