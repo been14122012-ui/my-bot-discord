@@ -321,8 +321,8 @@ Số dư: **${d.coins.toLocaleString("vi-VN")} ${coinEmoji}**.`);
       }
 
       const jobs = {
-        dishwashing: { name: "Rửa bát", reward: 150 },
-        livestream: { name: "Livestream", reward: 250 },
+        dishwashing: { name: "Rửa bát", reward: 300 },
+        livestream: { name: "Livestream", reward: 300 },
         programming: { name: "Lập trình", reward: 300 }
       };
       const jobKey = i.options.getString("job", true);
