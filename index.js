@@ -173,7 +173,7 @@ client.on(Events.InteractionCreate, async i => {
     const cmd = i.commandName;
     const guild = i.guild;
 
-    if (["server","kick","ban","timeout","clear","ticket","rank","leaderboard","balance","daily","work","pay","shop","buy"].includes(cmd) && !guild) {
+    if (["server","kick","ban","timeout","clear","ticket","rank","leaderboard","balance","daily","work","casino","pay","shop","buy"].includes(cmd) && !guild) {
       return errorReply(i, "Lệnh này chỉ sử dụng trong server Discord.");
     }
 
@@ -188,7 +188,7 @@ client.on(Events.InteractionCreate, async i => {
           { name: "Quản lý", value: "`/kick` `/ban` `/timeout` `/clear`", inline: false },
           { name: "Ticket", value: "`/ticket` — đăng bảng tạo ticket", inline: false },
           { name: "Level", value: "`/rank` `/leaderboard type:XP`", inline: false },
-          { name: "Economy", value: "`/balance` `/daily` `/work` `/pay` `/shop` `/buy`", inline: false },
+          { name: "Economy", value: "`/balance` `/daily` `/work` `/casino` `/pay` `/shop` `/buy`", inline: false },
           { name: "AI", value: "`/ask question:...` (cần API key)", inline: false }
         );
       return i.reply({ embeds: [embed], ephemeral: true });
@@ -335,6 +335,44 @@ Số dư: **${d.coins.toLocaleString("vi-VN")} ${coinEmoji}**.`);
       const coinEmoji = await getCoinEmoji(guild);
       return i.reply(`💼 Bạn đã làm công việc **${job.name}** và nhận **${job.reward} ${coinEmoji}**.
 Số dư: **${d.coins.toLocaleString("vi-VN")} ${coinEmoji}**.`);
+    }
+
+    if (cmd === "casino") {
+      const d = userData(guild.id, i.user.id);
+      const game = i.options.getString("game", true);
+      const bet = i.options.getInteger("bet", true);
+      if (bet < 200) return errorReply(i, "Mức cược tối thiểu là 200 coin nhé!");
+      if (d.coins < bet) return errorReply(i, "Bạn không đủ coin để đặt cược.");
+
+      const coinEmoji = await getCoinEmoji(guild);
+      d.coins -= bet;
+
+      if (game === "coinflip") {
+        const won = Math.random() < 0.5;
+        const result = won ? "🟢 Mặt ngửa — bạn thắng!" : "🔴 Mặt sấp — bạn thua!";
+        const payout = won ? bet * 2 : 0;
+        d.coins += payout;
+        saveData();
+        const net = payout - bet;
+        return i.reply(`${result}\n🎲 Tiền cược: **${bet.toLocaleString("vi-VN")} ${coinEmoji}**\n${won ? `Bạn nhận lại **${payout.toLocaleString("vi-VN")} ${coinEmoji}** (lãi ${net.toLocaleString("vi-VN")} ${coinEmoji}).` : `Bạn mất **${bet.toLocaleString("vi-VN")} ${coinEmoji}**.`}\n💰 Số dư: **${d.coins.toLocaleString("vi-VN")} ${coinEmoji}**.`);
+      }
+
+      if (game === "slots") {
+        const symbols = ["🍒", "🍋", "🍇", "🔔", "💎"];
+        const reels = [0, 1, 2].map(() => symbols[Math.floor(Math.random() * symbols.length)]);
+        const triple = reels[0] === reels[1] && reels[1] === reels[2];
+        const pair = !triple && (reels[0] === reels[1] || reels[1] === reels[2] || reels[0] === reels[2]);
+        const multiplier = triple ? 5 : pair ? 2 : 0;
+        const payout = bet * multiplier;
+        d.coins += payout;
+        saveData();
+        const result = triple ? "🎉 JACKPOT! Ba biểu tượng trùng nhau!" : pair ? "✨ Có một cặp — bạn thắng!" : "💨 Không trúng lần này!";
+        const net = payout - bet;
+        return i.reply(`🎰 **CASINO SLOTS**\n┏━━━━━━━━━━┓\n┃  ${reels.join("  │  ")}  ┃\n┗━━━━━━━━━━┛\n${result}\n🎲 Tiền cược: **${bet.toLocaleString("vi-VN")} ${coinEmoji}**\n${payout > 0 ? `Tiền trả thưởng: **${payout.toLocaleString("vi-VN")} ${coinEmoji}** (lãi ${net.toLocaleString("vi-VN")} ${coinEmoji}).` : `Bạn mất **${bet.toLocaleString("vi-VN")} ${coinEmoji}**.`}\n💰 Số dư: **${d.coins.toLocaleString("vi-VN")} ${coinEmoji}**.`);
+      }
+      d.coins += bet;
+      saveData();
+      return errorReply(i, "Trò chơi không hợp lệ, tiền cược đã được hoàn lại.");
     }
 
     if (cmd === "pay") {
