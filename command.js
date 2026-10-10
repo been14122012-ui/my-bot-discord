@@ -41,6 +41,12 @@ const commands = [
       { name: "Livestream — 300 coin", value: "livestream" },
       { name: "Lập trình — 300 coin", value: "programming" }
     )),
+  new SlashCommandBuilder().setName("casino").setDescription("Chơi casino bằng coin trong server")
+    .addStringOption(o => o.setName("game").setDescription("Chọn trò chơi").setRequired(true).addChoices(
+      { name: "Tung đồng xu (50/50)", value: "coinflip" },
+      { name: "Máy đánh bạc (Slots)", value: "slots" }
+    ))
+    .addIntegerOption(o => o.setName("bet").setDescription("Số coin cược (tối thiểu 200, tối đa bằng số dư của bạn)").setRequired(true).setMinValue(200)),
   new SlashCommandBuilder().setName("pay").setDescription("Chuyển coin cho thành viên")
     .addUserOption(o => o.setName("user").setDescription("Người nhận").setRequired(true))
     .addIntegerOption(o => o.setName("amount").setDescription("Số coin").setRequired(true).setMinValue(1)),
